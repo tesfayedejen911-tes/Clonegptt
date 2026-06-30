@@ -8,15 +8,29 @@ import { errorHandler } from "./src/middleware/error-handler.js";
 import mainRouter from "./src/api/main.routes.js";
 
 const app = express();
-// allow requests from your frontend port
+
+const allowedOrigins = [
+  "https://gptclonefrontend.tesfayedejen.com",
+  // "http://localhost:5173",
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173", // Allow only your React app
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
   }),
 );
 
 app.use(express.json());
 app.use("/api", mainRouter);
+app.use("/", (req, res) => {
+  res.send("Server is running");
+});
 
 // Final middleware for handling errors
 
@@ -28,11 +42,12 @@ async function startServer() {
     connection.release();
     // console.log("Database connection established successfully.");
 
-    app.listen(3888, (err) => {
+    const port = process.env.PORT || 3888;
+    app.listen(port, (err) => {
       if (err) {
         throw err;
       }
-      console.log("Server is running on port http://localhost:3888");
+      console.log(`Server is running on port http://localhost:${port}`);
     });
   } catch (error) {
     console.error("Error starting the server:", error.message);
